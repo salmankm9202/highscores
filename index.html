@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>High Scores</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+        background-color: var(--body-bg);
+        color: var(--text-color);
+        transition: background-color 0.5s, color 0.5s;
+    }
+    h2 {
+        margin: 20px;
+        text-align: center;
+        font-size: 2.5em;
+    }
+    .container {
+        width: 90%;
+        max-width: 1200px;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: var(--container-bg);
+        transition: background-color 0.5s;
+        overflow: hidden;
+    }
+    .table-container {
+        overflow: auto;
+        max-height: 400px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        min-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 1em;
+        transition: background-color 0.3s;
+    }
+    th {
+        position: sticky;
+        top: 0;
+        background-color: var(--header-bg);
+        color: var(--header-color);
+        z-index: 1;
+    }
+    tr:nth-child(even) {
+        background-color: var(--table-row-even-bg);
+    }
+    tr:hover {
+        background-color: var(--table-row-hover-bg);
+    }
+    .theme-toggle {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+    }
+    .theme-toggle button {
+        padding: 10px 20px;
+        margin: 0 5px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 1em;
+        transition: background-color 0.3s, color 0.3s, transform 0.3s;
+    }
+    .theme-toggle button.light {
+        background-color: #ecf0f1;
+        color: #34495e;
+    }
+    .theme-toggle button.gray1 {
+        background-color: #bdc3c7;
+        color: #2c3e50;
+    }
+    .theme-toggle button.black {
+        background-color: #34495e;
+        color: #ecf0f1;
+    }
+    .theme-toggle button:hover {
+        transform: scale(1.05);
+    }
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        animation: spin 2s linear infinite;
+        margin: auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    /* Light Theme */
+    body.light {
+        --body-bg: #f7f9fc;
+        --container-bg: #ecf0f1;
+        --text-color: #34495e;
+        --header-bg: #3498db;
+        --header-color: white;
+        --table-row-even-bg: #f2f2f2;
+        --table-row-hover-bg: #e1f5fe;
+    }
+    /* Gray Theme 1 */
+    body.gray1 {
+        --body-bg: #bdc3c7;
+        --container-bg: #95a5a6;
+        --text-color: #2c3e50;
+        --header-bg: #34495e;
+        --header-color: #ecf0f1;
+        --table-row-even-bg: #95a5a6;
+        --table-row-hover-bg: #7f8c8d;
+    }
+    /* Black Theme */
+    body.black {
+        --body-bg: #2c3e50;
+        --container-bg: #34495e;
+        --text-color: #ecf0f1;
+        --header-bg: #1abc9c;
+        --header-color: white;
+        --table-row-even-bg: #3d566e;
+        --table-row-hover-bg: #3498db;
+    }
+</style>
+</head>
+<body class="light">
+<div class="theme-toggle">
+    <button class="light" onclick="setTheme('light')">Light Theme</button>
+    <button class="gray1" onclick="setTheme('gray1')">Gray Theme</button>
+    <button class="black" onclick="setTheme('black')">Black Theme</button>
+</div>
+<h2>High Scores</h2>
+<div class="container">
+    <div class="loader" id="loader"></div>
+    <div class="table-container" style="display: none;">
+        <table id="highscoresTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Created At</th>
+                    <th>Problem Id</th>
+                    <th>Fitness</th>
+                    <th>Individual</th>
+                    <th>Creator</th>
+                    <th>Config</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const apiUrl = 'https://nbnhzxnfqkxxtzuafpji.supabase.co/rest/v1/highscore';
+    const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibmh6eG5mcWt4eHR6dWFmcGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcwOTYzMTQsImV4cCI6MjAzMjY3MjMxNH0.HaUzcl3YbaafYLlTn87ijWFaWJmlNPzfiHGHRIu2BoQ';
+
+    try {
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Apikey': apiKey
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        const tableBody = document.querySelector('#highscoresTable tbody');
+        const loader = document.getElementById('loader');
+        const tableContainer = document.querySelector('.table-container');
+
+        data.forEach(entry => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td data-label="ID">${entry.id}</td>
+                <td data-label="Created At">${new Date(entry.created_at).toLocaleString()}</td>
+                <td data-label="Problem Id">${entry.problem_id}</td>
+                <td data-label="Fitness">${entry.fitness}</td>
+                <td data-label="Individual">${entry.individual}</td>
+                <td data-label="Creator">${entry.creator}</td>
+                <td data-label="Config">${entry.config}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        loader.style.display = 'none';
+        tableContainer.style.display = 'block';
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+});
+
+function setTheme(themeName) {
+    document.body.className = themeName;
+}
+</script>
+</body>
+</html>
