@@ -100,10 +100,10 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto;
+            margin: 20% auto; /* Adjust margin to move modal further down */
             padding: 20px;
             border: 1px solid #888;
-            width: 80%;
+            width: 60%; /* Adjust width to reduce modal size */
             border-radius: 10px;
             color: black; /* Default text color */
         }
@@ -274,6 +274,7 @@
 
                 data.forEach(entry => {
                     const row = document.createElement('tr');
+                    row.setAttribute('data-fitness', entry.fitness); // Store full fitness value
                     row.innerHTML = `
                         <td>${pad(entry.id, 3)}</td>
                         <td>${formatLocalDateTime(entry.created_at)}</td>
@@ -307,9 +308,14 @@
 
             if (rowToCopy) {
                 const cells = Array.from(rowToCopy.cells);
+                const fitness = rowToCopy.getAttribute('data-fitness'); // Get the full fitness value
                 const rowData = cells.map(cell => {
                     const header = cell.parentElement.parentElement.parentElement.querySelector('thead th:nth-child(' + (cell.cellIndex + 1) + ')').textContent;
                     let content = cell.textContent.trim();
+
+                    if (header === 'Fitness') {
+                        content = fitness; // Use the full fitness value
+                    }
 
                     if (header === 'Individual') {
                         // Format Individual data inside [ ]
