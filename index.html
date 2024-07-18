@@ -25,29 +25,26 @@
             font-size: 2.5em;
         }
         .container {
-            width: 90%; /* Adjusted width to add left and right margins */
+            width: 90%;
             max-width: 100%;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             background-color: #ecf0f1;
-            overflow: hidden; /* Ensure no horizontal scrolling */
+            overflow: hidden;
         }
         .table-container {
-            overflow-x: auto; /* Enable horizontal scrolling */
-            max-width: 100%;
-            max-height: 80vh; /* Limit the height to make the table scrollable */
-            position: relative;
+            overflow-x: auto;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            table-layout: fixed; /* Fix table layout to prevent overflow */
+            table-layout: fixed;
         }
         th, td {
-            padding: 8px; /* Adjusted padding */
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
             overflow: hidden;
@@ -60,7 +57,8 @@
             top: 0;
             background-color: #3498db;
             color: white;
-            z-index: 10; /* Ensure the header is on top of other elements */
+            z-index: 4;
+            cursor: pointer;
         }
         tr {
             background-color: #f2f2f2;
@@ -82,10 +80,9 @@
             background-color: #2980b9;
         }
         .copied {
-            background-color: #2ecc71 !important; /* Green color for copied state */
+            background-color: #2ecc71 !important;
             cursor: default;
         }
-
         /* Modal Styles */
         .modal {
             display: none;
@@ -100,12 +97,12 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 20% auto; /* Adjust margin to move modal further down */
+            margin: 15% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 60%; /* Adjust width to reduce modal size */
+            width: 80%;
             border-radius: 10px;
-            color: black; /* Default text color */
+            color: black;
         }
         .modal-content pre {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -127,7 +124,6 @@
         .modal-button:hover {
             background-color: #2980b9;
         }
-
         /* Light Theme */
         .light-theme {
             background-color: #ffffff;
@@ -143,9 +139,8 @@
             background-color: #ffffff;
         }
         .light-theme tr:hover {
-            background-color: #e0e0e0; /* Light gray hover color */
+            background-color: #e0e0e0;
         }
-
         /* Dark Theme */
         .dark-theme {
             background-color: #2c3e50;
@@ -163,7 +158,6 @@
         .dark-theme tr:hover {
             background-color: #5499c7;
         }
-
         /* Black Theme */
         .black-theme {
             background-color: #000000;
@@ -181,7 +175,6 @@
         .black-theme tr:hover {
             background-color: #555555;
         }
-
         /* Theme buttons */
         .theme-buttons {
             position: absolute;
@@ -201,12 +194,25 @@
         .theme-button:hover {
             opacity: 0.8;
         }
-
-        /* Responsive */
-        @media screen and (max-width: 768px) {
-            .modal-content {
-                width: 90%;
-            }
+        /* Search bar */
+        .search-container {
+            margin-bottom: 20px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .search-container input[type=text] {
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+            box-sizing: border-box;
+        }
+        .search-container input[type=text]:focus {
+            outline: none;
+            border-color: #3498db;
         }
     </style>
 </head>
@@ -218,7 +224,6 @@
         <button class="theme-button" onclick="applyTheme('dark-theme')">Dark Theme</button>
         <button class="theme-button" onclick="applyTheme('black-theme')">Black Theme</button>
     </div>
-
     <!-- Modal -->
     <div id="copyModal" class="modal">
         <div class="modal-content">
@@ -230,19 +235,18 @@
             </div>
         </div>
     </div>
-
     <div class="container">
+        <div class="search-container">
+            <input type="text" id="searchInput" oninput="filterTable()" placeholder="Search by Problem ID...">
+        </div>
         <div class="table-container">
             <table id="highscoresTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Created At</th>
-                        <th>Problem ID</th>
-                        <th>Fitness</th>
-                        <th style="display:none;">Individual</th>
-                        <th>Creator</th>
-                        <th style="display:none;">Config</th>
+                        <th onclick="sortTable('created_at')">Created At</th>
+                        <th onclick="sortTable('problem_id')">Problem ID</th>
+                        <th onclick="sortTable('fitness')">Fitness</th>
+                        <th onclick="sortTable('creator')">Creator</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -252,131 +256,143 @@
             </table>
         </div>
     </div>
-
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const apiUrl = 'https://nbnhzxnfqkxxtzuafpji.supabase.co/rest/v1/highscore';
-            const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibmh6eG5mcWt4eHR6dWFmcGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcwOTYzMTQsImV4cCI6MjAzMjY3MjMxNH0.HaUzcl3YbaafYLlTn87ijWFaWJmlNPzfiHGHRIu2BoQ';
+    document.addEventListener('DOMContentLoaded', async function() {
+         const apiUrl = 'https://nbnhzxnfqkxxtzuafpji.supabase.co/rest/v1/highscore';
+        const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibmh6eG5mcWt4eHR6dWFmcGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcwOTYzMTQsImV4cCI6MjAzMjY3MjMxNH0.HaUzcl3YbaafYLlTn87ijWFaWJmlNPzfiHGHRIu2BoQ';
 
-            try {
-                const response = await fetch(apiUrl, {
-                    headers: {
-                        'Apikey': apiKey
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+        try {
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Apikey': apiKey
                 }
-
-                const data = await response.json();
-                const tableBody = document.getElementById('tableBody');
-
-                data.forEach(entry => {
-                    const row = document.createElement('tr');
-                    row.setAttribute('data-fitness', entry.fitness); // Store full fitness value
-                    row.innerHTML = `
-                        <td>${pad(entry.id, 3)}</td>
-                        <td>${formatLocalDateTime(entry.created_at)}</td>
-                        <td>${pad(entry.problem_id, 3)}</td>
-                        <td>${parseFloat(entry.fitness).toFixed(6)}</td>
-                        <td style="display:none;">${entry.individual}</td>
-                        <td>${entry.creator}</td>
-                        <td style="display:none;">${entry.config}</td>
-                        <td><button class="copy-row-button" onclick="openCopyModal('${entry.id}')">Copy Row</button></td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Fetch error:', error);
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            const data = await response.json();
+            const tableBody = document.getElementById('tableBody');
+            data.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatLocalDateTime(entry.created_at)}</td>
+                    <td>${pad(entry.problem_id, 3)}</td>
+                    <td>${parseFloat(entry.fitness).toFixed(6)}</td>
+                    <td>${entry.creator}</td>
+                    <td><button class="copy-row-button" onclick="openCopyModal('${JSON.stringify(entry.individual)}', '${encodeURIComponent(JSON.stringify(entry.config))}')">Copy Row</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Default sort by fitness column after loading data
+            sortTable('fitness');
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    });
+
+    function openCopyModal(individual, config) {
+        const individualData = JSON.parse(individual);
+        const configData = JSON.parse(decodeURIComponent(config));
+        const modalContent = document.getElementById('modalContent');
+        modalContent.textContent = `Individual: ${JSON.stringify(individualData, null, 2)}\nConfig: ${JSON.stringify(configData, null, 2)}`;
+        const modal = document.getElementById('copyModal');
+        modal.style.display = 'block';
+        const closeModalButton = document.getElementById('closeModalButton');
+        closeModalButton.onclick = function() {
+            modal.style.display = 'none';
+        };
+        const copyToClipboardButton = document.getElementById('copyToClipboardButton');
+        copyToClipboardButton.onclick = function() {
+            const completeRowData = `Individual: ${JSON.stringify(individualData, null, 2)}\nConfig: ${JSON.stringify(configData, null, 2)}`;
+            navigator.clipboard.writeText(completeRowData).then(function() {
+                console.log('Row copied to clipboard:', completeRowData);
+                modal.style.display = 'none';
+            }).catch(function(err) {
+                console.error('Unable to copy row:', err);
+            });
+        };
+    }
+
+    function formatLocalDateTime(datetimeString) {
+        const localDate = new Date(datetimeString);
+        const day = pad(localDate.getDate(), 2);
+        const month = pad(localDate.getMonth() + 1, 2);
+        const year = localDate.getFullYear();
+        const hours = pad(localDate.getHours(), 2);
+        const minutes = pad(localDate.getMinutes(), 2);
+        return `${hours}:${minutes}  ${day}/${month}/${year}`;
+    }
+
+    function applyTheme(theme) {
+        const body = document.body;
+        body.className = '';
+        body.classList.add(theme);
+    }
+
+    function pad(number, length) {
+        let str = '' + number;
+        while (str.length < length) {
+            str = '0' + str;
+        }
+        return str;
+    }
+
+    function sortTable(columnName) {
+        const table = document.getElementById('highscoresTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        const isNumeric = columnName === 'fitness' || columnName === 'problem_id'; // Check if column is numeric
+
+        rows.sort((rowA, rowB) => {
+            let cellA = rowA.querySelector(`td:nth-child(${getIndexOfColumn(columnName) + 1})`).textContent.trim();
+            let cellB = rowB.querySelector(`td:nth-child(${getIndexOfColumn(columnName) + 1})`).textContent.trim();
+
+            // Convert to numbers for numeric columns
+            if (isNumeric) {
+                cellA = parseFloat(cellA);
+                cellB = parseFloat(cellB);
+            }
+
+            if (cellA < cellB) return -1;
+            if (cellA > cellB) return 1;
+            return 0;
         });
 
-        function openCopyModal(id) {
-            const table = document.getElementById('highscoresTable');
-            const rows = table.rows;
-            let rowToCopy = null;
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+        }
 
-            // Find the row with the matching ID
-            for (let i = 0; i < rows.length; i++) {
-                // Skip the header row
-                if (rows[i].parentNode.tagName === 'TBODY' && rows[i].cells[0].textContent === id.toString()) {
-                    rowToCopy = rows[i];
-                    break;
+        rows.forEach(row => {
+            tbody.appendChild(row);
+        });
+    }
+
+    function getIndexOfColumn(columnName) {
+        const headers = Array.from(document.getElementById('highscoresTable').querySelectorAll('th'));
+        return headers.findIndex(header => header.textContent.trim().toLowerCase() === columnName.toLowerCase());
+    }
+
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('highscoresTable');
+        const tbody = table.querySelector('tbody');
+        const rows = tbody.getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            const problemIdColumn = rows[i].getElementsByTagName('td')[1];
+            if (problemIdColumn) {
+                const problemIdValue = problemIdColumn.textContent || problemIdColumn.innerText;
+                if (problemIdValue.toUpperCase().indexOf(filter) > -1) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
                 }
             }
-
-            if (rowToCopy) {
-                const cells = Array.from(rowToCopy.cells);
-                const fitness = rowToCopy.getAttribute('data-fitness'); // Get the full fitness value
-                const rowData = cells.map(cell => {
-                    const header = cell.parentElement.parentElement.parentElement.querySelector('thead th:nth-child(' + (cell.cellIndex + 1) + ')').textContent;
-                    let content = cell.textContent.trim();
-
-                    if (header === 'Fitness') {
-                        content = fitness; // Use the full fitness value
-                    }
-
-                    if (header === 'Individual') {
-                        // Format Individual data inside [ ]
-                        content = `[${content.split(',').join(',\n ')}]`;
-                    }
-
-                    if (header !== 'Action') { // Exclude the Action column
-                        return `${header}: ${content}`;
-                    }
-                }).filter(item => item !== undefined).join('\n');
-
-                // Show modal with data
-                const modalContent = document.getElementById('modalContent');
-                modalContent.textContent = rowData;
-
-                // Show modal
-                const modal = document.getElementById('copyModal');
-                modal.style.display = 'block';
-
-                // Close modal when close button is clicked
-                const closeModalButton = document.getElementById('closeModalButton');
-                closeModalButton.onclick = function() {
-                    modal.style.display = 'none';
-                };
-
-                // Copy to clipboard button functionality
-                const copyToClipboardButton = document.getElementById('copyToClipboardButton');
-                copyToClipboardButton.onclick = function() {
-                    navigator.clipboard.writeText(rowData).then(function() {
-                        console.log('Row copied to clipboard:', rowData);
-                        modal.style.display = 'none'; // Close modal after copying
-                    }).catch(function(err) {
-                        console.error('Unable to copy row:', err);
-                    });
-                };
-            }
         }
-
-        function formatLocalDateTime(datetimeString) {
-            const localDate = new Date(datetimeString);
-            const day = pad(localDate.getDate(), 2);
-            const month = pad(localDate.getMonth() + 1, 2);
-            const year = localDate.getFullYear();
-            const hours = pad(localDate.getHours(), 2);
-            const minutes = pad(localDate.getMinutes(), 2);
-            return `${hours}:${minutes}  ${day}/${month}/${year}`;
-        }
-
-        function applyTheme(theme) {
-            const body = document.body;
-            body.className = ''; // Remove all existing theme classes
-            body.classList.add(theme); // Add the selected theme class
-        }
-
-        function pad(number, length) {
-            let str = '' + number;
-            while (str.length < length) {
-                str = '0' + str;
-            }
-            return str;
-        }
+    }
     </script>
 </body>
 </html>
