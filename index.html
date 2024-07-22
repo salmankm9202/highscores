@@ -230,7 +230,7 @@
             <span class="close">&times;</span>
             <pre id="modalContent"></pre>
             <div class="modal-buttons">
-                <button class="modal-button" id="copyToClipboardButton">Copy to Clipboard</button>
+                <button class="modal-button" id="copyToClipboardButton">Copy Config to Clipboard</button>
                 <button class="modal-button" id="closeModalButton">Close</button>
             </div>
         </div>
@@ -258,7 +258,7 @@
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', async function() {
-         const apiUrl = 'https://nbnhzxnfqkxxtzuafpji.supabase.co/rest/v1/highscore';
+        const apiUrl = 'https://nbnhzxnfqkxxtzuafpji.supabase.co/rest/v1/highscore';
         const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibmh6eG5mcWt4eHR6dWFmcGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTcwOTYzMTQsImV4cCI6MjAzMjY3MjMxNH0.HaUzcl3YbaafYLlTn87ijWFaWJmlNPzfiHGHRIu2BoQ';
 
         try {
@@ -277,15 +277,16 @@
                 row.innerHTML = `
                     <td>${formatLocalDateTime(entry.created_at)}</td>
                     <td>${pad(entry.problem_id, 3)}</td>
-                    <td>${parseFloat(entry.fitness).toFixed(6)}</td>
+                    <td>${parseFloat(entry.fitness).toFixed(8)}</td>
                     <td>${entry.creator}</td>
                     <td><button class="copy-row-button" onclick="openCopyModal('${JSON.stringify(entry.individual)}', '${encodeURIComponent(JSON.stringify(entry.config))}')">Copy Row</button></td>
                 `;
                 tableBody.appendChild(row);
             });
 
-            // Default sort by fitness column after loading data
-            sortTable('fitness');
+            // Default sort by Problem ID and then by Fitness after loading data
+            sortTable('problem_id');
+            sortTable('fitness'); // Sort by Fitness in descending order
         } catch (error) {
             console.error('Fetch error:', error);
         }
@@ -295,7 +296,7 @@
         const individualData = JSON.parse(individual);
         const configData = JSON.parse(decodeURIComponent(config));
         const modalContent = document.getElementById('modalContent');
-        modalContent.textContent = `Individual: ${JSON.stringify(individualData, null, 2)}\nConfig: ${JSON.stringify(configData, null, 2)}`;
+        modalContent.textContent = `Individual:\n\n${JSON.stringify(individualData, null, 2)}\n\nConfig:\n\n${JSON.stringify(configData, null, 2)}`;
         const modal = document.getElementById('copyModal');
         modal.style.display = 'block';
         const closeModalButton = document.getElementById('closeModalButton');
@@ -304,13 +305,24 @@
         };
         const copyToClipboardButton = document.getElementById('copyToClipboardButton');
         copyToClipboardButton.onclick = function() {
-            const completeRowData = `Individual: ${JSON.stringify(individualData, null, 2)}\nConfig: ${JSON.stringify(configData, null, 2)}`;
+            const completeRowData = `Config:\n\n${JSON.stringify(configData, null, 2)}`;
             navigator.clipboard.writeText(completeRowData).then(function() {
-                console.log('Row copied to clipboard:', completeRowData);
+                console.log('Config copied to clipboard:', completeRowData);
                 modal.style.display = 'none';
             }).catch(function(err) {
-                console.error('Unable to copy row:', err);
+                console.error('Unable to copy config:', err);
             });
+        };
+        const closeModal = function(event) {
+            if (event.key === 'Escape') {
+                modal.style.display = 'none';
+                document.removeEventListener('keydown', closeModal);
+            }
+        };
+        document.addEventListener('keydown', closeModal);
+        modal.querySelector('.close').onclick = function() {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', closeModal);
         };
     }
 
@@ -321,7 +333,7 @@
         const year = localDate.getFullYear();
         const hours = pad(localDate.getHours(), 2);
         const minutes = pad(localDate.getMinutes(), 2);
-        return `${hours}:${minutes}  ${day}/${month}/${year}`;
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
     function applyTheme(theme) {
@@ -355,6 +367,10 @@
                 cellB = parseFloat(cellB);
             }
 
+            // For sorting Problem ID and Fitness
+            if (columnName === 'fitness') {
+                return cellB - cellA; // Descending order
+            }
             if (cellA < cellB) return -1;
             if (cellA > cellB) return 1;
             return 0;
